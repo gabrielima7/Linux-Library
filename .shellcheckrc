@@ -4,6 +4,9 @@
 # Default shell is bash
 shell=bash
 
+# Disable SC2034 - unused variables (constants.sh exports for use by other scripts)
+disable=SC2034
+
 # Enable all optional checks
 enable=all
 
