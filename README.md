@@ -6,16 +6,19 @@ Deploy applications across **Docker**, **Podman**, **LXC**, and **Bare Metal** w
 
 ---
 
-## ⚡ Quick Install
+## ⚡ Quick Start (One Command!)
 
+Execute the TUI directly without installing:
+```bash
+bash <(curl -sSL https://raw.githubusercontent.com/gabrielima7/Linux-Library/main/run.sh)
+```
+
+### Permanent Installation
 ```bash
 curl -sSL https://raw.githubusercontent.com/gabrielima7/Linux-Library/main/install.sh | bash
 ```
 
-After installation, restart your terminal or run:
-```bash
-source ~/.bashrc
-```
+After installation: `omni help`
 
 ---
 
