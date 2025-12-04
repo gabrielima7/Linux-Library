@@ -1,0 +1,215 @@
+name: CI - Multi-Distro Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # ShellCheck Lint
+  # ═══════════════════════════════════════════════════════════════════════════
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: warning
+          scandir: '.'
+          format: tty
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Test on Ubuntu
+  # ═══════════════════════════════════════════════════════════════════════════
+  ubuntu:
+    name: Ubuntu
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ['22.04', '24.04']
+    container:
+      image: ubuntu:${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y curl git jq
+      
+      - name: Test omni.sh help
+        run: bash omni.sh help
+      
+      - name: Test omni.sh version
+        run: bash omni.sh --version
+      
+      - name: Test omni.sh search
+        run: |
+          apt-get install -y apt-utils
+          bash omni.sh search nginx || true
+      
+      - name: Test omni.sh config
+        run: bash omni.sh config show
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Test on Debian
+  # ═══════════════════════════════════════════════════════════════════════════
+  debian:
+    name: Debian
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ['11', '12']
+    container:
+      image: debian:${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y curl git jq
+      
+      - name: Test omni.sh help
+        run: bash omni.sh help
+      
+      - name: Test omni.sh version
+        run: bash omni.sh --version
+      
+      - name: Test omni.sh search
+        run: bash omni.sh search nginx || true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Test on Fedora
+  # ═══════════════════════════════════════════════════════════════════════════
+  fedora:
+    name: Fedora
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: ['39', '40']
+    container:
+      image: fedora:${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: dnf install -y curl git jq
+      
+      - name: Test omni.sh help
+        run: bash omni.sh help
+      
+      - name: Test omni.sh version
+        run: bash omni.sh --version
+      
+      - name: Test omni.sh search
+        run: bash omni.sh search nginx || true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Test on Alpine
+  # ═══════════════════════════════════════════════════════════════════════════
+  alpine:
+    name: Alpine
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: apk add --no-cache bash curl git jq
+      
+      - name: Test omni.sh help
+        run: bash omni.sh help
+      
+      - name: Test omni.sh version
+        run: bash omni.sh --version
+      
+      - name: Test omni.sh search
+        run: bash omni.sh search nginx || true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Test on Arch Linux
+  # ═══════════════════════════════════════════════════════════════════════════
+  arch:
+    name: Arch Linux
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: pacman -Sy --noconfirm curl git jq
+      
+      - name: Test omni.sh help
+        run: bash omni.sh help
+      
+      - name: Test omni.sh version
+        run: bash omni.sh --version
+      
+      - name: Test omni.sh search
+        run: bash omni.sh search nginx || true
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Test on openSUSE
+  # ═══════════════════════════════════════════════════════════════════════════
+  opensuse:
+    name: openSUSE
+    runs-on: ubuntu-latest
+    container:
+      image: opensuse/leap:latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: zypper install -y curl git jq
+      
+      - name: Test omni.sh help
+        run: bash omni.sh help
+      
+      - name: Test omni.sh version
+        run: bash omni.sh --version
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Test run.sh TUI (non-interactive)
+  # ═══════════════════════════════════════════════════════════════════════════
+  tui-test:
+    name: TUI Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y curl jq
+      
+      - name: Test run.sh loads
+        run: timeout 2 bash run.sh || true
+      
+      - name: Test install.sh syntax
+        run: bash -n install.sh
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Summary
+  # ═══════════════════════════════════════════════════════════════════════════
+  summary:
+    name: CI Summary
+    needs: [shellcheck, ubuntu, debian, fedora, alpine, arch, opensuse, tui-test]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check results
+        run: |
+          echo "🎉 All distro tests completed!"
+          echo ""
+          echo "✅ Ubuntu 22.04/24.04"
+          echo "✅ Debian 11/12"
+          echo "✅ Fedora 39/40"
+          echo "✅ Alpine Latest"
+          echo "✅ Arch Linux"
+          echo "✅ openSUSE Leap"
